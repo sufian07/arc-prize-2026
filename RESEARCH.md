@@ -215,8 +215,88 @@ The readme also carries a methodological warning worth honouring in the paper: d
 modify an algorithm using the evaluation score as feedback. That is evaluation-set leakage, and
 with only 120 public eval tasks it is easy to do by accident.
 
-### Q3–Q5 — open
+### Q4 — the rule questions · answered 2026-09-04
+
+Source: [ARC-AGI-2 competition page](https://arcprize.org/competitions/2026/arc-agi-2) ·
+[2025 archive](https://arcprize.org/competitions/2025/archive)
+
+**The two rubrics are NOT the same. The "one document, two prize entries" assumption was wrong.**
+
+| ARC-AGI-2 Grand Prize ($275K) | Paper Track ($450K) |
+| --- | --- |
+| **Novelty** | **Novelty** |
+| **Theory** | **Theory** |
+| Effectiveness | Accuracy |
+| Efficiency | Universality |
+| Reproducibility | Progress |
+| Clarity | Completeness |
+
+Two of six overlap. Both average six 0–5 criteria. One technical report can still feed both, but
+it needs different framing per submission — and critically, the **AGI-2 Grand Prize requires an
+actual eligible Kaggle system with measured results**. A theory-first document with no working
+submission cannot win it. The Paper Track is more forgiving there; the Grand Prize is not.
+
+**Efficiency is its own criterion on the AGI-2 Grand Prize.** That is a strategic opening, not a
+footnote — see the note in `../contests/CONTESTS.md`.
+
+**Compute.** 2025 (archived) ran **4× NVIDIA L4, ~$50 of compute per submission**, with the Grand
+Prize threshold at roughly **$2.50/task** at 85%+ private accuracy. Internet/API systems (GPT, o3,
+Claude) are excluded during private evaluation. **2026 limits are announced at launch and are not
+yet published** — do not assume the 2025 L4×4 allocation carries over, and do not treat the Kaggle
+notebook default (T4 ×2) as the official 2026 competition limit. Treat T4 as *our* deployment
+target, not a published constraint.
+
+Scoring confirmed: exactly two output grids per test input, task scores 1 if either matches
+exactly, final score is the mean across task test outputs. Target is **85% on the private set**.
+
+### Unsolicited — "Why all ARC solvers fail today" · read 2026-09-04
+
+Source: [mvakde.github.io](https://mvakde.github.io/blog/why-all-ARC-solvers-fail-today/) —
+**a personal blog, self-reported numbers, not peer-reviewed or leaderboard-verified.** Weigh
+accordingly; the argument is worth more than the scores.
+
+**Claim:** *"Every solver today fails because it leaves some data uncompressed."* All current
+approaches violate Minimum Description Length by failing to jointly compress three sources:
+
+1. **Example input grids.** Solvers find `P` with `P(input) = output`, which compresses only the
+   outputs and leaves inputs listed verbatim. Proposed instead: find `F` with `F(k) = (I_k, O_k)`,
+   compressing both — because *"inputs and outputs share common structures: same kinds of red
+   squares, same object layouts, same background patterns."*
+2. **Private/test puzzles.** Almost all concepts in the eval puzzles already appear in the training
+   puzzles, so MDL demands compressing all puzzles together — which makes test-time training
+   *"100% necessary"* on the author's reading.
+3. **Test input grids.** These carry distribution shifts (e.g. 90° rotations), so a solver must
+   train on data sampling both distributions.
+
+Notes CompressARC as *"the only approach today that compresses the test inputs"*. Appendix
+taxonomies 15+ approaches by which source each leaves uncompressed, and treats hand-built
+augmentations, DSLs and bespoke architectures as **human intervention** to be designed out.
+
+Self-reported: **27.5% at "an unbelievable cost of $2"**, with a prediction of 50% within two
+weeks. Unverified — that would beat NVARC's 24.03%, and the two-week prediction is the kind of
+claim to hold loosely until it appears on a leaderboard.
+
+**What this means for us — two things, pulling opposite ways.**
+
+*Against the plan:* if test-time training really is necessary, a CPU-only pure-Python entry has a
+hard ceiling. That is a direct challenge and should not be waved off.
+
+*For the plan:* the author's own justification for joint compression is that **inputs and outputs
+share object structure** — "same kinds of red squares, same object layouts". That is the
+object-centric claim wearing compression clothes. It also stakes the compression framing publicly,
+which lowers the novelty available there while leaving the *representation vs search budget*
+question — ours — untouched and cheaper to test.
+
+Also worth noting: the post treats hand-built DSLs as the thing to eliminate. Our claim does not
+defend a DSL; it asks what the loop should propose *over*. Compatible, and testable without a GPU.
+
+### Q3, Q5 — open
 
 Still needed: whether test-time training survives on AGI-2 and at what compute, the state of
-DSL-based synthesis, what works inside Kaggle's constraints, and the two copy-paste rule questions
-in section 4.
+DSL-based synthesis, and the ARC-AGI-3 starter kit questions in section 5.
+
+Guidance received on method selection: both test-time training and DSL synthesis fit the
+constraints, since both run in-notebook, validate against demonstrations, and need no external
+API. The deciding test is not which looks cleverer but **whether either can solve a known public
+task deterministically inside the notebook's time and memory budget** before it ever sees an
+evaluation task.

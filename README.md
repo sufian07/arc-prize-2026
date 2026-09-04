@@ -84,5 +84,13 @@ Not started. Interface notes in `arc_agi_3/README.md`.
 
 ## Accelerators
 
-CPU · T4 ×2 (default) · P100 · RTX 6000 (ARC-AGI-3 only, higher quota use). Exact compute limits
-are set at competition launch — one of the open rule checks in `../contests/CONTESTS.md`.
+**2026 limits are not published yet** — they are announced at competition launch. Do not plan
+against the Kaggle notebook defaults (CPU · T4 ×2 · P100 · RTX 6000 for ARC-AGI-3); those are the
+notebook menu, not the competition's stated limit.
+
+For reference, the archived **2025** ARC-AGI-2 contest ran **4× NVIDIA L4 at ~$50 of compute per
+submission**, with the Grand Prize threshold near **$2.50/task**. Internet and external-API systems
+are excluded during private evaluation either way.
+
+We target CPU-only pure Python. That is a deliberate choice, not only a limitation — **Efficiency
+and Reproducibility are two of the six ARC-AGI-2 Grand Prize criteria.**
