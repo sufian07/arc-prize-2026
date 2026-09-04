@@ -290,6 +290,64 @@ question — ours — untouched and cheaper to test.
 Also worth noting: the post treats hand-built DSLs as the thing to eliminate. Our claim does not
 defend a DSL; it asks what the loop should propose *over*. Compatible, and testable without a GPU.
 
+### Architecture detail · 2026-09-04
+
+**Score collapse is the benchmark, not the field getting worse.** Private-leaderboard scores fell
+from **40–55% (2024, ARC-AGI-1)** to **6–24% (2025, ARC-AGI-2)**.
+
+**How ARC-AGI-2 was built to break the old playbook** — three deliberate changes:
+
+1. **Systematically removed tasks susceptible to brute-force program search.**
+2. Hand-tested human calibration of every task.
+3. Added compositional generalization — *symbolic interpretation* and *context-conditioned rules*.
+
+> Point 1 is aimed squarely at the cheapest approach available to us. Search over a transform
+> space is not merely weak on ARC-AGI-2; the benchmark was *designed* to exclude what it can reach.
+> This is the single most important finding for our plan. See the reassessment in
+> `../contests/CONTESTS.md`.
+
+**2024 winners (ARC-AGI-1)**
+
+| | Score | How |
+| --- | --- | --- |
+| ARChitects | 53.5% | NeMo-Minitron-8B + rule-based augmentation; selection by **stability of a solution under augmentation** |
+| Barbadillo (Omni-ARC) | 40.0% | Qwen2.5-**0.5B** multi-task fine-tune, then single-task TTT at runtime |
+| MindsAI | 55.5% raw | Highest score but **declined to open-source → ineligible** |
+
+2024's other lesson: **induction** (LLM writes Python programs) and **transduction** (LLM predicts
+output pixels directly) solve *complementary* task subsets, so ensembling the two paid.
+
+**2025 winners (ARC-AGI-2)**
+
+| | Score | How |
+| --- | --- | --- |
+| NVARC | 24.03% | Built on ARChitects' TTT. Moved heavy reasoning **offline**: 103k synthetic puzzles + 3.2M augmented, training a compact **4B Qwen**; runtime TTT at **$0.20/task** |
+| ARChitects | 16.53% | Threw out autoregression entirely. 2D-aware **masked diffusion** (LLaDA-8B), "Golden Gate RoPE" 2D positional encoding, latent soft-masking loop: guess → soft-mask → refine |
+| MindsAI | 12.64% | TTT + tokenizer dropout + augmentation ensembles |
+
+**Paper winners — scale is not the point**
+
+- **TRM** (1st, 8% AGI-2 / 45% AGI-1) — **7M parameters**. A single 2-layer network recursing over
+  its own state, refining answer and latent reasoning across *temporal* passes rather than physical
+  layers.
+- **CompressARC** (3rd, 20% AGI-1 / 4% AGI-2) — **76,000 parameters, zero pretraining,
+  inference-only.** Minimises Minimum Description Length per task by overfitting a tiny equivariant
+  network to the observed grids. **Converts combinatorial program search into differentiable
+  gradient descent.**
+
+> **CompressARC is the existence proof nearest our constraints.** 76k parameters and no pretraining
+> is plausibly CPU-feasible. It needs autodiff, so not stdlib — but it is a non-zero ARC-AGI-2
+> result that requires neither a frontier model nor a large-model TTT pipeline.
+
+**Unverified claim to treat with suspicion:** third-party sites (BenchLM.ai) report **"GPT-6 Astra
+leads at 95%"** on ARC-AGI-2 as of September 2026. This is exactly the ">90% third-party claim"
+the earlier research warned not to accept without tracing the evaluation protocol — different
+regime, possibly semi-private rather than private, possibly unconstrained cost. Not usable as a
+reference point without the protocol.
+
+Other lines worth reading later: code-evolution (Imbue), REPL agents (Symbolica), agentic coding
+harnesses (pivotools). All LLM-driven, so all outside our compute regime.
+
 ### Q3, Q5 — open
 
 Still needed: whether test-time training survives on AGI-2 and at what compute, the state of
