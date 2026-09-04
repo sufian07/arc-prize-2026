@@ -95,4 +95,50 @@ the RTX 6000 quota actually costs.
 Paste findings below as they come in, with the source. Anything that changes the plan gets carried
 into `../contests/CONTESTS.md`; anything that changes the code gets carried into the code.
 
-*(nothing yet)*
+### Q1 — what past paper winners won on · answered 2026-09-04
+
+Sources: [ARC Prize 2025 technical report](https://arxiv.org/html/2601.10904v1) ·
+[ARC Prize 2024 technical report](https://arxiv.org/html/2412.04604v2)
+
+**The Paper Track is not a disguised leaderboard contest.** In 2025 the top scorers were NVARC
+(24.03%), the ARChitects (16.53%) and MindsAI (12.64%); the Paper Awards went to **TRM, SOAR and
+CompressARC** — three different systems. 2024 repeated the pattern: high score was the ARChitects
+at 53.5%, while the papers went to induction/transduction, test-time training, and latent-program
+search. Leaderboard strength buys credibility. It is neither necessary nor sufficient.
+
+| Paper | ARC performance | Why it mattered |
+| --- | --- | --- |
+| **TRM** — 1st | 45% AGI-1 · **8% AGI-2** | Recursive refinement in a **7M-parameter** network produces competitive reasoning |
+| **SOAR** — 2nd | up to +52% on an open AGI-1 solver | Search traces improve the generator — no hand-built DSL, no solution corpus |
+| **CompressARC** — 3rd | 20–34% AGI-1 · **4% AGI-2** | Per-puzzle description-length minimisation generalises with no pretraining and no search |
+
+**CompressARC settles the "can a modest score win" question: yes.** 4% on ARC-AGI-2 against a 24%
+winner, and it still placed third — because it isolated a clean phenomenon (a tiny randomly
+initialised model, optimised for one puzzle, still finds useful abstractions). What carried it was
+not a better pipeline. It was a falsifiable explanation, tested.
+
+**Calibration for our 0%:** the whole field is in single-to-low-double digits on ARC-AGI-2. Paper
+winners scored 8% and 4%. Our 0/120 is a weak baseline, not a broken one.
+
+**What scores on Theory** — one sharp explanatory claim, plus belief earned:
+
+1. **Mechanism** — name the proposed *cause*, not the components.
+2. **Minimal intervention** — strip confounds (huge pretrained models, hidden data, ensembles) so
+   the mechanism is visible. TRM's 7M params and CompressARC's no-pretraining are the exemplars.
+3. **Ablations that could have falsified it** — remove the recursion, the MDL objective, the
+   verifier feedback; show which removal breaks which capability.
+4. **Boundary conditions** — where it fails, how cost scales, whether it survives AGI-1 → AGI-2.
+   CompressARC's collapse from 20–34% to 4% was *reported*, not hidden; it defines the limit.
+5. **Connection to a broader principle** — 2025's unifying theme was the **refinement loop**:
+   repeatedly improve a candidate using feedback, whether it lives in weights, Python, or language.
+
+*How* is a recipe. *Why* is a causal claim plus an experiment that could have proven it wrong.
+
+The 2025 report also notes the performance frontier was driven by refinement loops while the
+**efficiency gap still needs new scientific ideas** — that gap is where a small entry can say
+something real.
+
+### Q2–Q5 — open
+
+Still needed: current ARC-AGI-2 SOTA and method, why AGI-2 broke the AGI-1 playbook, best
+open-source AGI-2 solver, and the two copy-paste rule questions in section 4.
