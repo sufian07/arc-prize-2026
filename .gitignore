@@ -1,0 +1,6 @@
+data/
+submission.json
+submission.parquet
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
