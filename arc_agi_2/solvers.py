@@ -72,7 +72,15 @@ def fit_colour_map(pairs):
                     return None
 
     def predict(g, m=mapping):
-        return [[m.get(v, v) for v in row] for row in g]
+        # Refuse rather than guess. A colour absent from every training input has
+        # no learned image, and passing it through unchanged is a guess dressed
+        # as a rule. Training task aabf363d is the case: colour 8 appears only at
+        # test time, the identity fallthrough got 16 of 49 cells wrong, and the
+        # task counted as solved-then-failed instead of honestly abstained.
+        # Same discipline as rejecting a rule that misses one demonstration cell.
+        if any(v not in m for row in g for v in row):
+            return None
+        return [[m[v] for v in row] for row in g]
 
     return predict
 
@@ -163,12 +171,11 @@ def predict(task) -> list:
     out = []
     for test in task["test"]:
         g = test["input"]
-        if fitted:
-            a1 = fitted[0][1](g)
-            a2 = fitted[1][1](g) if len(fitted) > 1 else second_guess(pairs, g)
-        else:
-            a1 = fallback(pairs, g)
-            a2 = second_guess(pairs, g)
+        # A fitted solver may still abstain on this particular input, so collect
+        # what actually produced a grid rather than trusting the fit alone.
+        got = [p for _, fn in fitted if (p := fn(g)) is not None]
+        a1 = got[0] if got else fallback(pairs, g)
+        a2 = got[1] if len(got) > 1 else second_guess(pairs, g)
         if a1 == a2:
             a2 = second_guess(pairs, g)
         out.append({"attempt_1": a1, "attempt_2": a2})

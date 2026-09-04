@@ -138,7 +138,85 @@ The 2025 report also notes the performance frontier was driven by refinement loo
 **efficiency gap still needs new scientific ideas** — that gap is where a small entry can say
 something real.
 
-### Q2–Q5 — open
+### Q2 — ARC-AGI-2 state of the art · answered 2026-09-04
 
-Still needed: current ARC-AGI-2 SOTA and method, why AGI-2 broke the AGI-1 playbook, best
-open-source AGI-2 solver, and the two copy-paste rule questions in section 4.
+Sources: [ARC Prize 2025 technical report](https://arxiv.org/html/2601.10904v1) ·
+[official leaderboard](https://arcprize.org/leaderboard)
+
+**Two regimes, and they are not comparable.**
+
+| Regime | Best | Cost |
+| --- | --- | --- |
+| Constrained Kaggle (our regime) | **NVARC 24.03%** · ARChitects 16.53% · MindsAI 12.64% | ~$0.20/task |
+| Unconstrained | Gemini 3 Pro alone **31%**; Poetiq refinement harness **54%** | ~$31/task |
+
+Treat third-party "90%+" claims as unverified without tracing the evaluation protocol — the
+official leaderboard separates base models, reasoning systems, refinement harnesses and
+constrained Kaggle systems, and flags some results as provisional.
+
+**Every winning family is a per-task refinement loop:** generate a candidate, test it against the
+demonstrations, use the mismatch as feedback, revise.
+
+- *Test-time training in weight space* — NVARC (2024 ARChitects idea + synthetic data), ARChitects
+  (spatially oriented masked-diffusion with recursive self-refinement), MindsAI (test-time
+  fine-tuning + augmentation ensembles)
+- *Program synthesis and search* — generate candidate programs, verify against **all**
+  demonstrations, mutate or refine
+- *LLM + verifier harness* — strong but far more expensive
+- *Small recursive / per-puzzle models* — TRM 8%, CompressARC 4%
+
+**Why ARC-AGI-2 broke the ARC-AGI-1 playbook.** Same grid format, but difficulty is *normalised* —
+the easy wins that carried brittle solvers are gone. The AGI-1 playbook leant on a fixed library of
+transformations, a static DSL, or one-pass pattern matching. AGI-2 more often demands
+**composition**: identify objects and relations, propose a rule, apply it, and reject it if even
+one demonstration cell disagrees. The report's central conclusion is that leading systems need
+**iterative refinement rather than a static solver**.
+
+> This is a direct hit on the current design. `solvers.py` is exactly the static library the
+> playbook says fails — a fixed list, one pass, no refinement, no object representation.
+
+**Is 0/120 normal?** No canonical naive-baseline table is published, deliberately — public
+baselines invite overfitting, and official SOTA is measured only on non-public subsets. But 0/120
+is plausible for a narrow one-shot baseline and is *not* evidence of a bug on its own, given paper
+winners scored 4% and 8%.
+
+### Q2 follow-up — plumbing verified locally, 2026-09-04
+
+Ran the suggested check (`arc_agi_2/diagnose.py`), which separates *fitted the demonstrations*,
+*was willing to answer*, and *was right*:
+
+```
+tasks with a fitting solver  : 9
+  abstained on the test input: 1
+  answered                   : 8
+    correct                  : 8
+    wrong (FALSE POSITIVE)   : 0
+solved by fallback luck only : 1
+```
+
+**Verdict: plumbing is exact, coverage is the problem.** Every rule that explained the
+demonstrations and was willing to answer got the held-out test right. Zero false positives.
+
+Two things the check surfaced that the raw score hid:
+
+1. **`aabf363d` was a confidently wrong answer.** `colour_map` fit all demonstrations, then met
+   colour 8 at test time — absent from every training input — and passed it through unchanged,
+   getting 16 of 49 cells wrong. Fixed: the solver now **abstains** when an input contains a colour
+   with no learned image. Same discipline as rejecting a rule that misses one demonstration cell.
+2. **`e872b94a` was luck, not a solve.** No rule fit; the constant-fill fallback happened to match.
+
+So the honest training number is **8 real solves out of 1000**, not 9. Evaluation stays 0/120.
+
+**Correction to the brief:** ARC-AGI-2 has **1,000 public training tasks** (combining ARC-AGI-1
+tasks with new ones) and 120 public evaluation — not 400. Straight from the repo readme. Average
+human performance on the public evaluation set was **66%**.
+
+The readme also carries a methodological warning worth honouring in the paper: do not repeatedly
+modify an algorithm using the evaluation score as feedback. That is evaluation-set leakage, and
+with only 120 public eval tasks it is easy to do by accident.
+
+### Q3–Q5 — open
+
+Still needed: whether test-time training survives on AGI-2 and at what compute, the state of
+DSL-based synthesis, what works inside Kaggle's constraints, and the two copy-paste rule questions
+in section 4.
