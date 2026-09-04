@@ -348,7 +348,39 @@ reference point without the protocol.
 Other lines worth reading later: code-evolution (Imbue), REPL agents (Symbolica), agentic coding
 harnesses (pivotools). All LLM-driven, so all outside our compute regime.
 
-### Q3, Q5 — open
+### Q3 — can a CPU-only loop clear zero? · answered 2026-09-04
+
+**Yes, but nothing verified.** No leaderboard-confirmed ARC-AGI-2 submission is both strictly
+CPU-only and above 0% — every Kaggle top score and most open-source solvers use a GPU at inference
+for TTT, neural synthesis, or LLM sampling.
+
+| Result | AGI-2 | Regime | Verified? |
+| --- | --- | --- | --- |
+| Heuristic-only pattern matchers (SOAR-based repo README) | **~2.1%** | **pure CPU, no neural model** | self-reported, public subset |
+| CompressARC | 4% | single RTX 4070, **~20 min/puzzle**, no pretraining | published report, not Kaggle-private |
+| TRM | 8% | 7M params, GPU at test time | research report, not Kaggle-private |
+| NVARC | 24.03% | 4B model + synthetic data + runtime TTT, $0.20/task | **Kaggle private-set verified** |
+
+**The ~2.1% heuristic figure is the reference point that matters here.** It is unverified and on a
+public subset, but it establishes that zero is beatable on CPU with no learning at all. Our 0/120
+is therefore a **coverage gap, not a ceiling**.
+
+**"Test-time training is 100% necessary" is refuted as an absolute.** Heuristics with no learning
+can clear zero. The defensible version: *some* per-task refinement appears necessary for
+double digits, but fine-tuning a large pretrained model is not required — tiny from-scratch
+per-puzzle optimisers also clear zero.
+
+**CompressARC-on-CPU is not viable as a submission.** ~20 min/puzzle on an RTX 4070 implies hours
+per puzzle on CPU; across 120 evaluation tasks that exceeds any Kaggle notebook runtime. Attractive
+as a *question*, dead as a strategy.
+
+**Guidance received:** a CPU-only system can plausibly reach low single digits with a strong
+heuristic library plus a small search verifying candidates against all demonstrations, but is
+unlikely to approach 10–20% without per-task optimisation.
+
+### Q5 — open
+
+ARC-AGI-3 starter kit, deferred to October.
 
 Still needed: whether test-time training survives on AGI-2 and at what compute, the state of
 DSL-based synthesis, and the ARC-AGI-3 starter kit questions in section 5.
