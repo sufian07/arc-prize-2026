@@ -30,6 +30,42 @@ def same(a: Grid, b: Grid) -> bool:
     return a == b
 
 
+def rot90(g: Grid) -> Grid:
+    """Clockwise."""
+    return [list(r) for r in zip(*g[::-1])]
+
+
+def rot180(g: Grid) -> Grid:
+    return [row[::-1] for row in g[::-1]]
+
+
+def rot270(g: Grid) -> Grid:
+    return [list(r) for r in zip(*g)][::-1]
+
+
+def anti_transpose(g: Grid) -> Grid:
+    return rot180([list(r) for r in zip(*g)])
+
+
+def tile(g: Grid, a: int, b: int) -> Grid:
+    wide = [row * b for row in g]
+    return [r[:] for _ in range(a) for r in wide]
+
+
+def scale(g: Grid, a: int, b: int) -> Grid:
+    out = []
+    for row in g:
+        wide = [v for v in row for _ in range(b)]
+        out.extend(wide[:] for _ in range(a))
+    return out
+
+
+def background(g: Grid) -> int:
+    """The most common colour. Ties break to the lower colour, deterministically."""
+    counts = Counter(v for row in g for v in row)
+    return min(counts.items(), key=lambda kv: (-kv[1], kv[0]))[0]
+
+
 # ---------------------------------------------------------------------------
 # solvers
 #
@@ -116,6 +152,212 @@ def fit_most_common_colour(pairs):
     return None
 
 
+# ---------------------------------------------------------------------------
+# tranche 2 - added 2026-09-05
+#
+# These exist to move one number: the size of the hypothesis library. The claim
+# under test (see ../../contests/CONTESTS.md) is that demonstration-consistency
+# stays a near-perfect selector as the library grows. That is only measurable
+# if the library actually grows, in tranches, with precision recorded at each
+# step. See `measure.py`.
+#
+# Every one obeys the same two rules as tranche 1: reject unless the rule
+# reproduces *every* demonstration exactly, and return None rather than guess
+# when the rule is underdetermined for this particular input.
+# ---------------------------------------------------------------------------
+
+def _whole_grid(op):
+    """Build a fit function for a parameterless whole-grid geometric op."""
+
+    def fit(pairs, op=op):
+        for p in pairs:
+            if op(p["input"]) != p["output"]:
+                return None
+        return lambda g, op=op: op(g)
+
+    return fit
+
+
+fit_rot90 = _whole_grid(rot90)
+fit_rot180 = _whole_grid(rot180)
+fit_rot270 = _whole_grid(rot270)
+fit_anti_transpose = _whole_grid(anti_transpose)
+fit_mirror_h = _whole_grid(lambda g: [row + row[::-1] for row in g])
+fit_mirror_v = _whole_grid(lambda g: [r[:] for r in g] + [r[:] for r in g[::-1]])
+
+
+def fit_tile(pairs):
+    """Output is the input repeated a x b times. One factor pair for the task."""
+    factors = set()
+    for p in pairs:
+        gi, go = p["input"], p["output"]
+        h, w = dims(gi)
+        H, W = dims(go)
+        if not h or not w or H % h or W % w:
+            return None
+        a, b = H // h, W // w
+        if (a, b) == (1, 1):
+            return None  # identity wearing a tiling costume
+        if tile(gi, a, b) != go:
+            return None
+        factors.add((a, b))
+    if len(factors) != 1:
+        return None
+    (a, b), = factors
+    return lambda g, a=a, b=b: tile(g, a, b)
+
+
+def fit_scale(pairs):
+    """Each cell becomes an a x b block. One factor pair for the task."""
+    factors = set()
+    for p in pairs:
+        gi, go = p["input"], p["output"]
+        h, w = dims(gi)
+        H, W = dims(go)
+        if not h or not w or H % h or W % w:
+            return None
+        a, b = H // h, W // w
+        if (a, b) == (1, 1):
+            return None
+        if scale(gi, a, b) != go:
+            return None
+        factors.add((a, b))
+    if len(factors) != 1:
+        return None
+    (a, b), = factors
+    return lambda g, a=a, b=b: scale(g, a, b)
+
+
+def _unscale(g: Grid, a: int, b: int):
+    """Inverse of scale, or None when a block is not one colour."""
+    h, w = dims(g)
+    if not h or not w or h % a or w % b:
+        return None
+    out = []
+    for i in range(0, h, a):
+        row = []
+        for j in range(0, w, b):
+            block = {g[i + di][j + dj] for di in range(a) for dj in range(b)}
+            if len(block) != 1:
+                return None
+            row.append(block.pop())
+        out.append(row)
+    return out
+
+
+def fit_downscale(pairs):
+    """Block-reduce by a x b, where every block is a single colour."""
+    factors = set()
+    for p in pairs:
+        gi, go = p["input"], p["output"]
+        h, w = dims(gi)
+        H, W = dims(go)
+        if not H or not W or h % H or w % W:
+            return None
+        a, b = h // H, w // W
+        if (a, b) == (1, 1):
+            return None
+        if _unscale(gi, a, b) != go:
+            return None
+        factors.add((a, b))
+    if len(factors) != 1:
+        return None
+    (a, b), = factors
+    # A non-uniform block at test time means the rule does not apply here, so
+    # _unscale returns None. That is an abstention, not a guess.
+    return lambda g, a=a, b=b: _unscale(g, a, b)
+
+
+def _bbox(g: Grid, bg: int):
+    rows = [i for i, row in enumerate(g) if any(v != bg for v in row)]
+    if not rows:
+        return None
+    cols = [j for j in range(len(g[0])) if any(row[j] != bg for row in g)]
+    if not cols:
+        return None
+    return [row[min(cols):max(cols) + 1] for row in g[min(rows):max(rows) + 1]]
+
+
+def fit_crop_bbox(pairs):
+    """Crop to the bounding box of everything that is not the background."""
+    for p in pairs:
+        gi = p["input"]
+        if _bbox(gi, background(gi)) != p["output"]:
+            return None
+    return lambda g: _bbox(g, background(g))
+
+
+def fit_strip_border(pairs):
+    """Drop one cell from every edge."""
+    for p in pairs:
+        gi = p["input"]
+        h, w = dims(gi)
+        if h < 3 or w < 3:
+            return None
+        if [row[1:-1] for row in gi[1:-1]] != p["output"]:
+            return None
+    return lambda g: ([row[1:-1] for row in g[1:-1]]
+                      if len(g) >= 3 and len(g[0]) >= 3 else None)
+
+
+def fit_add_border(pairs):
+    """Surround the input with a one-cell frame of a single fixed colour."""
+    colours = set()
+    for p in pairs:
+        gi, go = p["input"], p["output"]
+        h, w = dims(gi)
+        if dims(go) != (h + 2, w + 2):
+            return None
+        frame = set(go[0]) | set(go[-1]) | {r[0] for r in go} | {r[-1] for r in go}
+        if len(frame) != 1:
+            return None
+        if [row[1:-1] for row in go[1:-1]] != gi:
+            return None
+        colours.add(frame.pop())
+    if len(colours) != 1:
+        return None
+    c, = colours
+    return lambda g, c=c: ([[c] * (len(g[0]) + 2)]
+                           + [[c] + row[:] + [c] for row in g]
+                           + [[c] * (len(g[0]) + 2)])
+
+
+def _pick(sel):
+    """1x1 output holding a colour chosen from the input by `sel`."""
+
+    def fit(pairs, sel=sel):
+        for p in pairs:
+            c = sel(p["input"])
+            if c is None or p["output"] != [[c]]:
+                return None
+        return lambda g, sel=sel: (None if sel(g) is None else [[sel(g)]])
+
+    return fit
+
+
+def _most_common(g):
+    counts = Counter(v for row in g for v in row)
+    return min(counts.items(), key=lambda kv: (-kv[1], kv[0]))[0] if counts else None
+
+
+def _least_common(g):
+    counts = Counter(v for row in g for v in row)
+    return min(counts.items(), key=lambda kv: (kv[1], kv[0]))[0] if counts else None
+
+
+def _most_common_non_bg(g):
+    counts = Counter(v for row in g for v in row)
+    if len(counts) < 2:
+        return None
+    del counts[background(g)]
+    return min(counts.items(), key=lambda kv: (-kv[1], kv[0]))[0]
+
+
+fit_pick_most_common = _pick(_most_common)
+fit_pick_least_common = _pick(_least_common)
+fit_pick_most_common_non_bg = _pick(_most_common_non_bg)
+
+
 # Order matters: the first fitting solver becomes attempt_1.
 SOLVERS = [
     ("constant", fit_constant),
@@ -124,7 +366,27 @@ SOLVERS = [
     ("transpose", fit_transpose),
     ("flip_h", fit_flip_h),
     ("flip_v", fit_flip_v),
+    ("rot90", fit_rot90),
+    ("rot180", fit_rot180),
+    ("rot270", fit_rot270),
+    ("anti_transpose", fit_anti_transpose),
+    ("mirror_h", fit_mirror_h),
+    ("mirror_v", fit_mirror_v),
+    ("tile", fit_tile),
+    ("scale", fit_scale),
+    ("downscale", fit_downscale),
+    ("crop_bbox", fit_crop_bbox),
+    ("strip_border", fit_strip_border),
+    ("add_border", fit_add_border),
+    ("pick_most_common", fit_pick_most_common),
+    ("pick_least_common", fit_pick_least_common),
+    ("pick_most_common_non_bg", fit_pick_most_common_non_bg),
 ]
+
+# Which tranche each solver joined in. The coverage-vs-selection claim is tested
+# by replaying the library one tranche at a time and recording precision at each
+# step, so this is data the experiment reads, not commit history. See measure.py.
+TRANCHE = {name: (1 if i < 6 else 2) for i, (name, _) in enumerate(SOLVERS)}
 
 
 # ---------------------------------------------------------------------------

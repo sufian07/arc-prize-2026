@@ -19,10 +19,54 @@ there; ARC-AGI-3 is not started.
 | --- | --- | --- |
 | Pipeline runs end to end | yes | no |
 | Submission format validated | yes | no |
-| Local score | **0.90% training · 0.00% evaluation** | — |
+| Local score | **2.10% training · 0.00% evaluation** | — |
 
-The zero is the honest baseline, and it is the right thing to have on day one. The pipeline is
-what week 1 buys: a file the grader will accept, with a number attached that can only go up.
+The evaluation zero is the honest baseline and it is the right thing to have on day one. The
+pipeline is what week 1 buys: a file the grader will accept, with a number attached that can
+only go up.
+
+## The claim this entry is built to test
+
+Decided 2026-09-05. The entry optimises for **one falsifiable claim**, not for score — see
+`../contests/CONTESTS.md` for why, and `RESEARCH.md` Q1 for the evidence that the Paper Track
+rewards this shape (CompressARC took third in 2025 with 4%, against a 24% winner).
+
+> For a non-learning solver on ARC-AGI-2, the binding constraint is **hypothesis coverage, not
+> hypothesis selection**. Demonstration-consistency is a near-perfect selector: a rule that
+> explains every demonstration and is willing to answer is almost always right on the held-out
+> test. Accuracy is therefore bought linearly by adding rules, at no precision cost.
+
+**It is falsified if precision falls as the library grows** — if more rules means more co-fitting
+rules that disagree and the tie-break is wrong more often, selection binds and the claim is dead.
+Either outcome is a result, which is the point of stating it this way.
+
+The experiment is a replay: `solvers.TRANCHE` records which batch each rule joined in, so the
+library is rebuilt at every size and rescored.
+
+```bash
+python -m arc_agi_2.measure --split training
+```
+
+**First data point — 2026-09-05, training split (1000 tasks):**
+
+| Tranche | Rules | Answered | Coverage | precision@1 | Ambiguity | Accuracy |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 6 | 8 | 0.80% | **100.00%** | 0.00% | 0.80% |
+| 2 | 21 | 20 | 2.00% | **100.00%** | 0.00% | 2.00% |
+
+The library grew 3.5x, answers grew 2.5x, and precision did not move off 100%. Not one pair of
+fitting rules disagreed on any task. **The claim survives its first test**, and 2.00% lands on the
+~2.1% CPU-only heuristic reference point in `RESEARCH.md` Q3 — reached here with no learning at
+all, which is a cleaner version of that result than the one it matches.
+
+Two honest caveats, both load-bearing:
+
+- **n = 20.** One hundred percent of twenty is a weak interval. The claim needs a much larger
+  answered set before the precision number means anything, and growing it is the work.
+- **Evaluation is still 0/120** — no rule fits a single evaluation task, so the split that
+  actually pays offers no evidence either way yet. That is itself consistent with ARC-AGI-2 having
+  systematically removed search-susceptible tasks, and it is the reason the claim is about
+  *whether coverage is purchasable*, not about this library reaching a good score.
 
 ## ARC-AGI-2
 
@@ -32,6 +76,8 @@ Stdlib only — no numpy, no dependencies. A grid is a `list[list[int]]` with va
 python fetch_data.py                          # clones the public tasks into data/
 python -m arc_agi_2.run --split evaluation    # build submission.json + score locally
 python -m arc_agi_2.run --split training
+python -m arc_agi_2.measure --split training  # the coverage-vs-selection experiment
+python -m arc_agi_2.diagnose --split training # plumbing check: any false positives?
 ```
 
 **Submission format** — `submission.json`, one entry per task, one object per test input:
@@ -49,19 +95,31 @@ way to lose two months.
 
 ### The solvers
 
-`arc_agi_2/solvers.py` holds six deterministic baselines: constant output, identity, colour
-substitution, transpose, horizontal flip, vertical flip. A solver is used on a task **only if it
-reproduces every training pair exactly** — the one honest signal available before scoring, and
-free to check.
+`arc_agi_2/solvers.py` holds **21 deterministic rules in two tranches**. A rule is used on a task
+**only if it reproduces every training pair exactly** — the one honest signal available before
+scoring, and free to check. A rule that fits but cannot determine an answer for a particular input
+returns `None`: abstention is not a hypothesis, and dressing a guess as a rule is what the
+precision measurement exists to catch.
+
+- **Tranche 1** — constant, identity, colour_map, transpose, flip_h, flip_v.
+- **Tranche 2** (2026-09-05) — rot90/180/270, anti_transpose, mirror_h/v, tile, scale, downscale,
+  crop_bbox, strip_border, add_border, pick_most_common, pick_least_common,
+  pick_most_common_non_bg.
 
 Fit rates say plainly how far this is from real:
 
-| Solver | Training (1000) | Evaluation (120) |
+| Rule | Training (1000) | Evaluation (120) |
 | --- | --- | --- |
 | colour_map | 5 | 0 |
-| transpose | 2 | 0 |
-| flip_h / flip_v | 1 each | 0 |
-| nothing fits | 991 | **120** |
+| scale | 3 | 0 |
+| transpose · rot180 · mirror_h · mirror_v | 2 each | 0 |
+| flip_h · flip_v · rot270 · tile · crop_bbox | 1 each | 0 |
+| constant · identity · rot90 · anti_transpose · downscale · strip_border · add_border · pick_×3 | 0 | 0 |
+| **nothing fits** | **979** | **120** |
+
+Seven of the fifteen new rules fit nothing at all. That is worth stating rather than quietly
+dropping them: a rule that fits nothing costs no precision, which is exactly what a coverage-bound
+regime predicts, and deleting them would erase the evidence.
 
 Nothing fits any evaluation task. That gap is the actual problem to work on, and it is not a
 tuning problem — it needs a different class of approach.
