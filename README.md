@@ -129,12 +129,43 @@ input. Anything smarter plugs into `SOLVERS` and the submission pipeline never c
 
 ### On Kaggle
 
-No internet during evaluation. Point `--tasks` at the attached competition directory and pass
-`--no-score`, since hidden test outputs are not present:
+No internet during evaluation, so nothing fetches, installs or clones. The submission notebook is
+**generated from this repository**, never hand-edited:
+
+```bash
+python kaggle/build_notebook.py   # -> kaggle/arc_agi_2_submission.ipynb
+python kaggle/test_layouts.py     # prove the runner survives every input layout
+```
+
+Its code cells are the verbatim text of `arc_agi_2/solvers.py` and `kaggle/kaggle_runner.py`, so
+what Kaggle grades is byte-identical to what `measure.py` scored. Copying code into a notebook by
+hand makes two versions of the truth and grades the untested one.
+
+**The layout is the risk, not the score.** A submission covering the wrong set of task ids scores
+zero however good the rules are, and the only place that is visible is the notebook log. The 2026
+competition directory cannot be inspected from outside a Kaggle session, so `kaggle_runner.py`
+discovers the layout rather than assuming it, and prints every decision:
+
+| Layout | Handling |
+| --- | --- |
+| per-task `<task_id>.json` files | keyed by filename stem |
+| consolidated `arc-agi_test_challenges.json` | merged; a `test`-named file wins id collisions |
+| `sample_submission.json` present | **its keys are authoritative** — better evidence than any filename convention |
+| solutions files, metadata | ignored |
+
+`kaggle/test_layouts.py` builds all three shapes from the public evaluation split with answers
+withheld, plus decoy training files, and asserts the three submissions are identical, cover exactly
+the graded ids, and predict for no decoy. The notebook is separately checked to run with this repo
+off `sys.path` — self-contained, as no-internet requires.
+
+For an ad-hoc run against an attached directory, `run.py` still works:
 
 ```bash
 python -m arc_agi_2.run --tasks /kaggle/input/<competition-dir> --out submission.json --no-score
 ```
+
+**Before submitting:** set `REPO` in `kaggle/build_notebook.py` to the public URL and regenerate.
+Open-sourcing is required for prize eligibility, and required *before* private scores are released.
 
 ## ARC-AGI-3
 
