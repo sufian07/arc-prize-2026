@@ -57,7 +57,7 @@ the code cells below are the verbatim contents of `arc_agi_2/solvers.py` and
 requires.
 """
 
-REPO = "https://github.com/  <fill in before submitting>  /arc-prize-2026"
+REPO = "https://github.com/sufian07/arc-prize-2026"
 
 RUN_CELL = '''# Build the submission. Kaggle's own paths, no arguments to get wrong.
 rc = build(Path("/kaggle/input"), Path("/kaggle/working/submission.json"))
