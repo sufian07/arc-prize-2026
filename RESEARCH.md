@@ -69,7 +69,7 @@ The two families I'd bet on. I know them up to early 2026 and need the current p
 ## 4. The two open rule questions
 
 These are **copy-paste, not research** — the pages just need to be read by a human, since they
-render as empty shells to me. Both are logged in `../contests/CONTESTS.md`.
+render as empty shells to me.
 
 - The **ARC-AGI-2 competition rules page** — does its Grand Prize ($275K, judged on writeup
   quality) use the *same six criteria* as the Paper Track? The "one document, two prize entries"
@@ -92,8 +92,8 @@ the RTX 6000 quota actually costs.
 
 ## Answers
 
-Paste findings below as they come in, with the source. Anything that changes the plan gets carried
-into `../contests/CONTESTS.md`; anything that changes the code gets carried into the code.
+Paste findings below as they come in, with the source. Anything that changes the code gets carried
+into the code.
 
 ### Q1 — what past paper winners won on · answered 2026-09-04
 
@@ -237,7 +237,7 @@ actual eligible Kaggle system with measured results**. A theory-first document w
 submission cannot win it. The Paper Track is more forgiving there; the Grand Prize is not.
 
 **Efficiency is its own criterion on the AGI-2 Grand Prize.** That is a strategic opening, not a
-footnote — see the note in `../contests/CONTESTS.md`.
+footnote.
 
 **Compute.** 2025 (archived) ran **4× NVIDIA L4, ~$50 of compute per submission**, with the Grand
 Prize threshold at roughly **$2.50/task** at 85%+ private accuracy. Internet/API systems (GPT, o3,
@@ -303,8 +303,7 @@ from **40–55% (2024, ARC-AGI-1)** to **6–24% (2025, ARC-AGI-2)**.
 
 > Point 1 is aimed squarely at the cheapest approach available to us. Search over a transform
 > space is not merely weak on ARC-AGI-2; the benchmark was *designed* to exclude what it can reach.
-> This is the single most important finding for our plan. See the reassessment in
-> `../contests/CONTESTS.md`.
+> This is the single most important finding for our plan.
 
 **2024 winners (ARC-AGI-1)**
 

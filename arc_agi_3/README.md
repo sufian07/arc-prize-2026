@@ -1,7 +1,7 @@
 # ARC-AGI-3 — not started
 
-Secondary track. Scheduled for **Oct 9–26** per `../../contests/CONTESTS.md`; week 1 only needs a
-trivial valid submission here, not an agent worth anything.
+Secondary track. The first goal here is only a trivial valid submission, not an agent worth
+anything.
 
 Different problem from ARC-AGI-2 entirely. Not static grids — interactive game environments,
 scoring exploration, world-modeling, goal-setting and planning/execution. A batch predictor does

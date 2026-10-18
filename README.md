@@ -3,17 +3,13 @@
 Entry code for [ARC Prize 2026](https://arcprize.org/competitions/2026) — ARC-AGI-2 (primary),
 ARC-AGI-3 (secondary), and the Paper Track.
 
-Status, plan, deadlines and prize structure live in `../contests/CONTESTS.md`. This repo is
-only the code.
-
-> **This repo will be public.** Open-sourcing is mandatory for prize eligibility, and required
-> *before* private evaluation scores are released. Write every commit as though it is already
-> being read, because it will be.
+Open-sourced under the [MIT License](LICENSE) for ARC Prize 2026, which requires entries to be
+open source to be prize-eligible.
 
 ## Where things stand
 
-Week 1 of the plan is a *valid* submission on both code tracks — not a good one. ARC-AGI-2 is
-there; ARC-AGI-3 is not started.
+The first goal was a *valid* submission, not a good one. ARC-AGI-2 has one; ARC-AGI-3 is not
+started.
 
 | | ARC-AGI-2 | ARC-AGI-3 |
 | --- | --- | --- |
@@ -21,15 +17,17 @@ there; ARC-AGI-3 is not started.
 | Submission format validated | yes | no |
 | Local score | **2.10% training · 0.00% evaluation** | — |
 
-The evaluation zero is the honest baseline and it is the right thing to have on day one. The
-pipeline is what week 1 buys: a file the grader will accept, with a number attached that can
-only go up.
+The training score is 21/1000: 20 tasks answered by a fitting rule, plus one where no rule fits
+but the fallback guess happens to be right. The experiment below counts only rule answers, so it
+reports 2.00%.
+
+The evaluation zero is the honest baseline and it is the right thing to have first. What the
+pipeline buys is a file the grader will accept, with a number attached that can only go up.
 
 ## The claim this entry is built to test
 
 Decided 2026-09-05. The entry optimises for **one falsifiable claim**, not for score — see
-`../contests/CONTESTS.md` for why, and `RESEARCH.md` Q1 for the evidence that the Paper Track
-rewards this shape (CompressARC took third in 2025 with 4%, against a 24% winner).
+`RESEARCH.md` Q1 for the evidence that the Paper Track rewards this shape (CompressARC took third in 2025 with 4%, against a 24% winner).
 
 > For a non-learning solver on ARC-AGI-2, the binding constraint is **hypothesis coverage, not
 > hypothesis selection**. Demonstration-consistency is a near-perfect selector: a rule that
@@ -164,8 +162,8 @@ For an ad-hoc run against an attached directory, `run.py` still works:
 python -m arc_agi_2.run --tasks /kaggle/input/<competition-dir> --out submission.json --no-score
 ```
 
-**Before submitting:** set `REPO` in `kaggle/build_notebook.py` to the public URL and regenerate.
-Open-sourcing is required for prize eligibility, and required *before* private scores are released.
+The notebook header links back to this repository (`REPO` in `kaggle/build_notebook.py`), so the
+graded code can always be traced to its public source.
 
 ## ARC-AGI-3
 
@@ -173,8 +171,8 @@ Not started. Interface notes in `arc_agi_3/README.md`.
 
 ## Accelerators
 
-**2026 limits are not published yet** — they are announced at competition launch. Do not plan
-against the Kaggle notebook defaults (CPU · T4 ×2 · P100 · RTX 6000 for ARC-AGI-3); those are the
+**The 2026 compute limits are on each track's Kaggle competition page.** Do not plan against the
+Kaggle notebook defaults (CPU · T4 ×2 · P100 · RTX 6000 for ARC-AGI-3); those are the
 notebook menu, not the competition's stated limit.
 
 For reference, the archived **2025** ARC-AGI-2 contest ran **4× NVIDIA L4 at ~$50 of compute per

@@ -156,7 +156,7 @@ def fit_most_common_colour(pairs):
 # tranche 2 - added 2026-09-05
 #
 # These exist to move one number: the size of the hypothesis library. The claim
-# under test (see ../../contests/CONTESTS.md) is that demonstration-consistency
+# under test (see README.md) is that demonstration-consistency
 # stays a near-perfect selector as the library grows. That is only measurable
 # if the library actually grows, in tranches, with precision recorded at each
 # step. See `measure.py`.
